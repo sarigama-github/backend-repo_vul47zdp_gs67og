@@ -8,41 +8,50 @@ Each Pydantic model represents a collection in your database.
 Model name is converted to lowercase for the collection name:
 - User -> "user" collection
 - Product -> "product" collection
-- BlogPost -> "blogs" collection
+- BlogPost -> "blogpost" collection
+- Inquiry -> "inquiry" collection
 """
 
-from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
+from pydantic import BaseModel, Field, EmailStr
+from typing import Optional, List
+from datetime import datetime
 
 class User(BaseModel):
     """
     Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Collection name: "user"
     """
     name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
+    email: EmailStr = Field(..., description="Email address")
+    password_hash: str = Field(..., description="Password hash (PBKDF2)")
+    salt: str = Field(..., description="Per-user salt for hashing")
+    avatar_url: Optional[str] = Field(None, description="Avatar image URL")
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
     is_active: bool = Field(True, description="Whether user is active")
 
-class Product(BaseModel):
+class BlogPost(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Blog posts collection schema
+    Collection name: "blogpost"
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+    title: str
+    slug: str = Field(..., description="URL-friendly unique slug")
+    excerpt: Optional[str] = None
+    content: str
+    author: str
+    tags: List[str] = []
+    cover_image: Optional[str] = None
+    published_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
-# Add your own schemas here:
-# --------------------------------------------------
+class Inquiry(BaseModel):
+    """
+    Contact inquiries collection schema
+    Collection name: "inquiry"
+    """
+    name: str
+    email: EmailStr
+    message: str
+    status: str = Field("new", description="Status of the inquiry")
+    created_at: Optional[datetime] = Field(default_factory=datetime.utcnow)
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+# Note: The Flames database viewer can read these models from GET /schema
